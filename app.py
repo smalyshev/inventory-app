@@ -24,6 +24,23 @@ def get_product_stock(sku):
         return jsonify(product)
     return jsonify({"message": "Product not found"}), 404
 
+@app.route('/products/<sku>', methods=['POST'])
+def create_product(sku):
+    """
+    Creates a new product with the given SKU.
+    Expects a JSON payload with "name" and optional "stock".
+    """
+    data = request.get_json()
+    if not data or 'name' not in data:
+        return jsonify({"message": "Missing name in request"}), 400
+
+    if sku in inventory:
+        return jsonify({"message": f"Product with SKU {sku} already exists"}), 409
+
+    new_product = {"name": data["name"], "stock": data.get("stock", 0)}
+    inventory[sku] = new_product
+    return jsonify(new_product), 201
+
 @app.route('/products/<sku>/add', methods=['POST'])
 def add_stock(sku):
     data = request.get_json()
@@ -39,4 +56,3 @@ def add_stock(sku):
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080) # Cloud Run typically uses 8080
-
