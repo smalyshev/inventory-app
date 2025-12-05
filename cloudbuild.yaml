@@ -1,0 +1,39 @@
+steps:
+  # 1. Build the Docker image
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'build'
+      - '-t'
+      - '${_IMAGE_NAME}:${COMMIT_SHA}'
+      - '.'
+    id: 'Build'
+
+  # 2. Push the image to Google Artifact Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args:
+      - 'push'
+      - '${_IMAGE_NAME}:${COMMIT_SHA}'
+    id: 'Push'
+
+  # 3. Deploy the new image to Cloud Run
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - '${_SERVICE_NAME}'
+      - '--image'
+      - '${_IMAGE_NAME}:${COMMIT_SHA}'
+      - '--region'
+      - '${_REGION}'
+      - '--platform'
+      - 'managed'
+      - '--allow-unauthenticated'
+    id: 'Deploy'
+
+substitutions:
+  _PROJECT_ID: 'qwiklabs-gcp-00-a904a35ea139'
+  _REGION: 'us-east4'
+  _SERVICE_NAME: 'inventory-api'
+  _REPOSITORY: 'cloud-run-source-deploy'
+  _IMAGE_NAME: '${_REGION}-docker.pkg.dev/${_PROJECT_ID}/${_REPOSITORY}/${_SERVICE_NAME}'
